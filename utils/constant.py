@@ -13,3 +13,10 @@ class SIDE(Enum):
     BUY = "buy"
     SELL = "sell"
 
+
+class FREQUENCY(Enum):
+    SECOND = "second"
+    MINUTE = "minute"
+    HOUR = "hour"
+    DAY = "day"
+

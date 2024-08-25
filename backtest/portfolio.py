@@ -20,7 +20,7 @@ class Portfolio(object):
         return self.cash_balance
 
     def fill_order(self, order: FilledOrder) -> None:
-        self.cash_balance -= order.order_value
+        self.cash_balance -= order.order_value - abs(order.order_value) * order.commission_rate
         if self.cash_balance < 0:
             raise Exception("Negative cash balance.")
 
