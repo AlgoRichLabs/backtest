@@ -6,7 +6,6 @@ Description: <>
 """
 import pandas as pd
 
-
 class OHLCV(object):
     def __init__(self, data: pd.DataFrame) -> None:
         self.data = data
@@ -20,7 +19,7 @@ class OHLCV(object):
         :param end_timestamp: It's the end timestamp if provided.
         :return: OHLCV dataframe.
         """
-        pass
+        raise NotImplementedError
 
     def get_ohlcv_by_date_string(self, date_string: str, end_date_string: str = None) -> pd.DataFrame:
         """
@@ -32,11 +31,22 @@ class OHLCV(object):
         :param end_date_string: It's the end date string if provided.
         :return:
         """
-        pass
+        start_ts = pd.to_datetime(date_string, utc=True)
+        end_ts = pd.to_datetime(end_date_string, utc=True) if end_date_string else None
+
+        if end_ts:
+            condition = (self.data["ts_event"] > start_ts) & (self.data["ts_event"] < end_ts)
+            return self.data[condition]
+        else:
+            condition = self.data["ts_event"] >= start_ts
+            if sum(condition) > 0:
+                return self.data[condition].iloc[0]
+            else:
+                raise Exception("No data found.")
 
     def _get_symbol(self) -> str:
         """
         Get the symbol of the ticker.
         :return: symbol string.
         """
-        pass
+        return self.data.iloc[0]["symbol"]

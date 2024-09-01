@@ -4,7 +4,7 @@ Author: Zhicheng Tang
 Created Date: 8/23/24
 Description: <>
 """
-from order import FilledOrder
+from backtest.order import FilledOrder
 from utils.constant import SIDE
 
 

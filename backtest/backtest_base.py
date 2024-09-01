@@ -5,15 +5,19 @@ Created Date: 8/23/24
 Description: <This is a general backtest class that includes the essential methods required to backtest a strategy.>
 """
 from typing import List, Dict
-from order import FilledOrder
-from portfolio import Portfolio
-from position import Position
+import pandas as pd
+
+from backtest.order import FilledOrder
+from backtest.portfolio import Portfolio
+from backtest.position import Position
 from data_parser.ohlcv import OHLCV
+from data_parser.data_parser import DataParser
+from utils.constant import FREQUENCY
 
 
 class BacktestBase(object):
-    def __init__(self, history_data_path: Dict[str, str], time_sorted_orders: List[FilledOrder], start_date: str,
-                 end_date: str, **kwargs) -> None:
+    def __init__(self, history_data_path: Dict[str, str], frequency: FREQUENCY, start_date: str, end_date: str,
+                 **kwargs) -> None:
         """
         It only supports day level price backtest.
         :param history_data_path: dictionary with symbol as keys and data paths as values
@@ -23,14 +27,14 @@ class BacktestBase(object):
         :param kwargs: other potential configs.
         """
         self.history_data_path = history_data_path
-        self.time_sorted_orders = time_sorted_orders
         self.start_date = start_date
         self.end_date = end_date
         initial_cash_balance = kwargs.get('initial_cash_balance', 0)
         self.portfolio = Portfolio(initial_cash_balance)
+        self.frequency = frequency
         self.ohlcv_data = self._load_data()
 
-    def run(self) -> None:
+    def run_backtest(self, time_sorted_orders: List[FilledOrder]) -> None:
         # TODO: actual backtest process.
         """
         1. Record the backtest start time
@@ -51,8 +55,18 @@ class BacktestBase(object):
         pass
 
     def _load_data(self) -> Dict[str, OHLCV]:
-        pass
+        """
+        Initialize OHLCV objects for each symbol. Data timestamp is in UTC timezone.
+        :return: A dictionary of OHLCV objects.
+        """
+        ohlcv_data = {}
+        for symbol, path in self.history_data_path.items():
+            df = DataParser.read_ohlcv(path, self.frequency)
+            df["ts_event"] = pd.to_datetime(df["ts_event"], utc=True)
+            df.rename(columns={"ts_event": "ts"})
+            ohlcv_data[symbol] = OHLCV(df)
 
+        return ohlcv_data
 
 
 
