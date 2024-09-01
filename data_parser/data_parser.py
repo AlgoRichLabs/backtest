@@ -15,16 +15,27 @@ class DataParser(object):
             df = pd.read_csv(f'{data_path}/ohlcv-{frequency.value}.csv')
         elif frequency == FREQUENCY.DAY:
             print("Resampling methods not implemented.")
-            raise Exception("Not implemented yet")
+            raise NotImplementedError("Not implemented yet")
         elif frequency == FREQUENCY.MINUTE:
             print("Does not support minute level data.")
-            raise Exception("Not implemented yet")
+            raise NotImplementedError("Not implemented yet")
         elif frequency == FREQUENCY.SECOND:
             print("Does not support second level data.")
-            raise Exception("Not implemented yet")
+            raise NotImplementedError("Not implemented yet")
         else:
             raise ValueError(f"Invalid frequency: {frequency}.")
 
         return df
+
+    @staticmethod
+    def resample_ohlcv(df: pd.DataFrame, original_freq: FREQUENCY, target_freq: FREQUENCY) -> pd.DataFrame:
+        """
+        Resamples ohlcv from higher frequency to lower frequency.
+        :param df: dataframe to be resampled.
+        :param original_freq: original frequency.
+        :param target_freq: target frequency
+        :return: resampled dataframe.
+        """
+        raise NotImplementedError("Not implemented yet")
 
 

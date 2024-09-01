@@ -20,3 +20,7 @@ class FREQUENCY(Enum):
     HOUR = "hour"
     DAY = "day"
 
+
+class STRATEGY(Enum):
+    DCA = "dca"
+
