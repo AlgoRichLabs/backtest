@@ -17,6 +17,7 @@ class Portfolio(object):
 
     def add_cash_flow(self, value: float) -> float:
         self.cash_balance += value
+        self.update_portfolio()
         return self.cash_balance
 
     def fill_order(self, order: FilledOrder) -> None:
@@ -32,17 +33,18 @@ class Portfolio(object):
     def get_snapshot(self) -> Dict:
         return {"portfolio_value": self.portfolio_value, "cash_balance": self.cash_balance, "positions": self.positions}
 
-    def update_portfolio(self, prices: Dict[str, float]) -> None:
+    def update_portfolio(self, prices: Dict[str, float] = None) -> None:
         """
         Updates the portfolio value.
         :param prices: dictionary with symbol as keys and price as values.
         :return: None.
         """
-        for symbol, price in prices.items():
-            if symbol in self.positions.keys():
-                self.positions[symbol].update_position(price)
+        if prices:
+            for symbol, price in prices.items():
+                if symbol in self.positions.keys():
+                    self.positions[symbol].update_position(price)
 
-        self.portfolio_value = sum([position.position_value for position in self.positions.values()])
+        self.portfolio_value = sum([position.position_value for position in self.positions.values()]) + self.cash_balance
 
 
 

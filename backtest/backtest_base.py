@@ -6,10 +6,10 @@ Description: <This is a general backtest class that includes the essential metho
 """
 from typing import List, Dict
 import pandas as pd
+import numpy as np
 
-from backtest.order import FilledOrder
+from backtest.event import Event
 from backtest.portfolio import Portfolio
-from backtest.position import Position
 from data_parser.ohlcv import OHLCV
 from data_parser.data_parser import DataParser
 from utils.constant import FREQUENCY
@@ -19,9 +19,8 @@ class BacktestBase(object):
     def __init__(self, history_data_path: Dict[str, str], frequency: FREQUENCY, start_date: str, end_date: str,
                  **kwargs) -> None:
         """
-        It only supports day level price backtest.
-        :param history_data_path: dictionary with symbol as keys and data paths as values
-        :param time_sorted_orders: list of FilledOrder.
+        :param history_data_path: dictionary with symbol as keys and data paths as values.
+        :param frequency: frequency of the backtest data.
         :param start_date: start date string in format YYYY-MM-DD and it's inclusive.
         :param end_date: end date string in format YYYY-MM-DD and it's inclusive.
         :param kwargs: other potential configs.
@@ -33,30 +32,43 @@ class BacktestBase(object):
         self.portfolio = Portfolio(initial_cash_balance)
         self.frequency = frequency
         self.ohlcv_data = self._load_data()
+        self.portfolio_snapshots: List[Dict] = []
+        self.net_cash_flow = initial_cash_balance
+        self.period_returns: List[float] = []
 
-    def run_backtest(self, time_sorted_orders: List[FilledOrder]) -> None:
-        # TODO: actual backtest process.
-        """
-        1. Record the backtest start time
-        2. Load all history data to the memory. Since it's daily ohlc price data, it won't use too much memory.
-        3. Iterate every trading day in the range of start_date and end_date.
-            1. Load filled orders and get a portfolio snapshot.
-            2. Save the portfolio snapshot.
-        4. Record the backtest end time and compute the time consumption.
-        5. Print out the time consumption for backtesting.
-        :return: None.
-        """
-        pass
+    def run_backtest(self, time_sorted_events: List[Event]) -> None:
+        raise NotImplementedError("Run backtest method is not implemented.")
 
-    def get_annualized_return(self) -> float:
-        pass
+    @staticmethod
+    def get_simple_return(start_value: float, end_value: float) -> float:
+        return end_value / start_value - 1
+
+    @staticmethod
+    def get_time_weighted_return(returns: List[float], period: FREQUENCY) -> float:
+        """
+        Computes the annualized time weighted rate of return.
+        :param returns: a list of returns for each sub-period.
+        :param period: the frequency of the periods.
+        :return: annualized time weighted rate of return.
+        """
+        if period == FREQUENCY.DAY:
+            years = len(returns) / 365
+            return (np.prod([(1 + r) for r in returns]) - 1) ** (1 / years) - 1
+        elif period == FREQUENCY.WEEK:
+            avg_week_num_yearly = 52.1429
+            years = len(returns) / avg_week_num_yearly
+            return (np.prod([(1 + r) for r in returns]) - 1) ** (1 / years) - 1
+        elif isinstance(period, FREQUENCY):
+            raise NotImplementedError(f"{period} is not supported for get_time_weighted_return.")
+        else:
+            raise ValueError(f"Invalid period {period}.")
 
     def get_maximum_drawdown(self) -> float:
         pass
 
     def _load_data(self) -> Dict[str, OHLCV]:
         """
-        Initialize OHLCV objects for each symbol. Data timestamp is in UTC timezone.
+        Initialize OHLCV objects for each symbol. Data ts is in UTC timezone.
         :return: A dictionary of OHLCV objects.
         """
         ohlcv_data = {}

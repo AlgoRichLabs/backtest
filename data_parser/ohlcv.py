@@ -13,29 +13,29 @@ class OHLCV(object):
 
     def get_ohlcv_by_timestamp(self, timestamp: int, end_timestamp: int = None) -> pd.DataFrame:
         """
-        Get the most recent OHLCV record for a given timestamp. If end_timestamp is provided, it returns all records
+        Get the most recent OHLCV record for a given ts. If end_timestamp is provided, it returns all records
         within the range.
-        :param timestamp: If end_timestamp is provided, it's a snapshot timestamp, otherwise it's the start timestamp.
-        :param end_timestamp: It's the end timestamp if provided.
+        :param timestamp: If end_timestamp is provided, it's a snapshot ts, otherwise it's the start ts.
+        :param end_timestamp: It's the end ts if provided.
         :return: OHLCV dataframe.
         """
         raise NotImplementedError
 
     def get_ohlcv_by_date_string(self, date_string: str, end_date_string: str = None) -> pd.DataFrame:
         """
-        Get the most recent OHLCV record for a given date string. If end_date_string is provided, it returns all records
+        Get the most recent OHLCV record for a given filled_date string. If end_date_string is provided, it returns all records
         within the range. date_string should be in YYYY-MM-DD or YYYY-MM-DD HH format. Currently, only support day and
-        hour level.
-        :param date_string: If end_date_string is provided, it's a snapshot date string, otherwise it's the start date
+        hour level. Range is [start, end).
+        :param date_string: If end_date_string is provided, it's a snapshot filled_date string, otherwise it's the start filled_date
         string.
-        :param end_date_string: It's the end date string if provided.
+        :param end_date_string: It's the end filled_date string if provided.
         :return:
         """
         start_ts = pd.to_datetime(date_string, utc=True)
         end_ts = pd.to_datetime(end_date_string, utc=True) if end_date_string else None
 
         if end_ts:
-            condition = (self.data["ts_event"] > start_ts) & (self.data["ts_event"] < end_ts)
+            condition = (self.data["ts_event"] >= start_ts) & (self.data["ts_event"] < end_ts)
             return self.data[condition]
         else:
             condition = self.data["ts_event"] >= start_ts
