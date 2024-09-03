@@ -44,6 +44,6 @@ class Position(object):
         :param price: current market price.
         :return: None.
         """
-        self.unrealized_pnl = (self.average_entry_price - price) * self.amount
+        self.unrealized_pnl = (price - self.average_entry_price) * self.amount
         self.position_value = self.amount * price
 

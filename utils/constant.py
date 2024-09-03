@@ -19,6 +19,7 @@ class FREQUENCY(Enum):
     MINUTE = "minute"
     HOUR = "hour"
     DAY = "day"
+    WEEK = "week"
 
 
 class STRATEGY(Enum):
