@@ -9,7 +9,7 @@ import pandas as pd
 
 from backtest.backtest_base import BacktestBase
 from backtest.event import Event, CashFlowChange
-from backtest.order import FilledOrder
+from backtest.order import *
 from utils.constant import FREQUENCY
 
 
@@ -25,19 +25,29 @@ class BacktestDCA(BacktestBase):
         :return: None
         """
         last_value: float | None = None
+        open_orders: Dict[str, LimitOrder] = {}
+        self.events = time_ordered_events
         for event in time_ordered_events:
             if isinstance(event, FilledOrder):
                 filled_order: FilledOrder = event
                 self.portfolio.fill_order(filled_order)
                 self.portfolio.update_portfolio({filled_order.symbol: filled_order.filled_price})
                 self.portfolio_snapshots.append(self.portfolio.get_snapshot())
+            elif isinstance(event, LimitOrder):
+                open_orders[event.order_id] = event
+            elif isinstance(event, CanceledOrder):
+                del open_orders[event.order_id]
             elif isinstance(event, CashFlowChange):
                 if last_value:
                     prices = {}
                     for symbol in self.portfolio.positions.keys():
                         end_of_day = event.ts.normalize() + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
                         intraday_prices = self.ohlcv_data[symbol].get_ohlcv_by_date_string(event.ts, end_of_day)
-                        close_price = intraday_prices.iloc[-1].close
+                        try:
+                            close_price = intraday_prices.iloc[-1].close
+                        except IndexError:
+                            print(f"{event.ts} data not exist")
+                            continue
                         prices[symbol] = close_price
                     self.portfolio.update_portfolio(prices)
                     period_return = self.get_simple_return(last_value, self.portfolio.portfolio_value)

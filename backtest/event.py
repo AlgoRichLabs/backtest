@@ -7,8 +7,13 @@ Description: <>
 from pandas import Timestamp
 
 class Event:
+    _id_counter = 0
+
     def __init__(self, ts: Timestamp) -> None:
+        Event._id_counter += 1
         self.ts = ts
+        self.id = Event._id_counter
+
 
 class CashFlowChange(Event):
     def __init__(self, ts: Timestamp, change_amount: float) -> None:
