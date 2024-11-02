@@ -8,7 +8,7 @@ from typing import Dict, List
 import pandas as pd
 
 from backtest.backtest_base import BacktestBase
-from backtest.event import Event, CashFlowChange
+from backtest.event import Event, CashFlowChange, UpdatePortfolio
 from backtest.order import *
 from utils.constant import FREQUENCY
 
@@ -56,7 +56,25 @@ class BacktestDCA(BacktestBase):
                 self.portfolio.add_cash_flow(event.change_amount)
                 self.net_cash_flow += event.change_amount
                 last_value = self.portfolio.portfolio_value
+            elif isinstance(event, UpdatePortfolio):
+                self.portfolio.update_portfolio(event.prices)
             elif isinstance(event, Event):
                 raise NotImplementedError(f"{event} not supported.")
             else:
                 raise ValueError(f"Invalid event type: {type(event)}.")
+
+    def export_filled_order(self) -> None:
+        if self.events:
+            filled_orders = [event for event in self.events if isinstance(event, FilledOrder)]
+            data = [{
+                "symbol": event.symbol,
+                "filled_price": event.filled_price,
+                "quantity": event.quantity,
+                "side": event.side,
+                "filled_date": event.filled_date,
+            } for event in filled_orders]
+
+            df = pd.DataFrame(data)
+            df.to_excel("backtest_orders.xlsx", index=False)
+        else:
+            logger.error(f"No filled order to export.")
