@@ -5,3 +5,4 @@ openpyxl
 jupyter
 ipykernel
 scipy
+scikit-learn
