@@ -12,13 +12,10 @@ class DataParser(object):
     @staticmethod
     def read_ohlcv(data_path: str, frequency: FREQUENCY) -> pd.DataFrame:
         if frequency == FREQUENCY.HOUR:
-
             df = pd.read_csv(f'{data_path}/ohlcv-{frequency.value}.csv')
-            # df["timestamp"] = pd.to_datetime(df["ts_event"])
-            # # TODO: Filter out the data that's not in normal market hours range (utc), need to consider the daylight saving time.
-            # # TODO: filtering makes the model perform worse. Why?
-            # condition = ((df['timestamp'].dt.hour >= 13) & (df['timestamp'].dt.hour <= 20))
-            # df = df.loc[condition].drop(columns=["timestamp"])
+            df["timestamp"] = pd.to_datetime(df["ts_event"])
+            condition = ((df['timestamp'].dt.hour >= 13) & (df['timestamp'].dt.hour <= 20))
+            df = df.loc[condition].drop(columns=["timestamp"])
         elif frequency == FREQUENCY.DAY:
             print("Resampling methods not implemented.")
             raise NotImplementedError("Not implemented yet")
