@@ -4,7 +4,9 @@ Author: Zhicheng Tang
 Created Date: 8/24/24
 Description: <This class parses the raw data into the format that strategy and backtest could use.>
 """
+from typing import List
 import pandas as pd
+
 from utils.constant import FREQUENCY
 
 
@@ -59,7 +61,40 @@ class DataParser(object):
             resampled_df["ts_event"] = resampled_df["ts_event"].astype(str)
             return resampled_df
 
-
         raise NotImplementedError("Not implemented yet")
 
+    @staticmethod
+    def align_return(alpha_close: pd.DataFrame, forward_periods: int) -> pd.DataFrame:
+        """
+        :param alpha_close: feature with the close price.
+        :param forward_periods: the forward period used to compute return.
+        :return: dataframe of ts_event, feature and return.
+        """
+        df = alpha_close.copy()
+        factor_name = alpha_close.columns[1]
+        df["return"] = df["close"].pct_change(periods=forward_periods)
+        df["return"] = df["return"].shift(-forward_periods)
+        return df.dropna().loc[:, ["ts_event", factor_name, "return"]]
+
+    @staticmethod
+    def merge_features_binary(feature_lst: List[pd.DataFrame], df: pd.DataFrame, forward_periods: int) -> pd.DataFrame:
+        """
+        :param feature_lst: list of features in dataframe format.
+        :param df: the original ohlcv dataframe.
+        :param forward_periods: period of the forward return.
+        :return: features and the target.
+        """
+        feature_lst = feature_lst.copy()
+        for i in range(len(feature_lst)):
+            feature_lst[i] = DataParser.align_return(feature_lst[i].merge(df, on="ts_event", how="inner"), forward_periods)
+
+        results = feature_lst.pop()
+
+        for feature in feature_lst:
+            results = results.merge(feature, on=["ts_event", "return"], how="inner")
+
+        positive_return = results["return"] > 0
+        results.loc[positive_return, "label"] = 1
+        results.loc[~positive_return, "label"] = 0
+        return results
 
