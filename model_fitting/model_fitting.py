@@ -5,6 +5,8 @@ Created Date: 12/21/24
 Description: <>
 """
 from typing import Dict, List
+# No need to use process pool executor as the computations are not conducted in Python.
+from concurrent.futures import ThreadPoolExecutor
 
 import pandas as pd
 from datetime import datetime, timedelta
@@ -70,7 +72,6 @@ def prepare_data(df: pd.DataFrame, start_time: datetime, end_time: datetime, ret
         end_time = end_time - retrain_freq
     return batch_indices[::-1]
 
-
 def fit_model(input_model, feature_forward: pd.DataFrame, indices: List[List[pd.Index]]) -> (pd.DataFrame, pd.DataFrame):
     """
     :param input_model: machine learning model.
@@ -81,7 +82,6 @@ def fit_model(input_model, feature_forward: pd.DataFrame, indices: List[List[pd.
     validation_results = pd.DataFrame({"ts_event": [], "pred": [], "pred_proba": []})
     test_results = pd.DataFrame({"ts_event": [], "pred": [], "pred_proba": []})
 
-    # TODO: This part could be done in parallel.
     for idx in indices:
         model = clone(input_model)
         train_index, validation_index, test_index = idx
@@ -104,6 +104,50 @@ def fit_model(input_model, feature_forward: pd.DataFrame, indices: List[List[pd.
 
     return validation_results, test_results
 
+
+def fit_model_parallel(input_model, feature_forward: pd.DataFrame, indices: List[List[pd.Index]]) -> (pd.DataFrame, pd.DataFrame):
+    """
+    :param input_model: machine learning model.
+    :param feature_forward: dataframe of features and the forward return.
+    :param indices: list of [train idx, validation idx, test idx].
+    :return: two dataframes. Each has ts_event, model pred, pred_proba and label.
+    """
+
+    def train(idx):
+        model = clone(input_model)
+        train_index, validation_index, test_index = idx
+        df_train = feature_forward.loc[train_index]
+        df_validation = feature_forward.loc[validation_index]
+        df_test = feature_forward.loc[test_index]
+
+        model.fit(df_train.drop(columns=["ts_event", "return", "label"]), df_train["label"])
+
+        validation_result = df_validation[["ts_event"]]
+        validation_result["pred"] = model.predict(df_validation.drop(columns=["ts_event", "return", "label"]))
+        validation_result["pred_proba"] = model.predict_proba(
+            df_validation.drop(columns=["ts_event", "return", "label"]))[:, 1]
+        # validation_results = pd.concat([validation_results, validation_result], axis=0)
+
+        test_result = df_test[["ts_event"]]
+        test_result["pred"] = model.predict(df_test.drop(columns=["ts_event", "return", "label"]))
+        test_result["pred_proba"] = model.predict_proba(df_test.drop(columns=["ts_event", "return", "label"]))[:, 1]
+        # test_results = pd.concat([test_results, test_result], axis=0)
+
+        return validation_result, test_result
+
+    validation_results, test_results = [], []
+
+    with ThreadPoolExecutor() as executor:
+        results = list(executor.map(train, indices))
+
+        for val_result, test_result in results:
+            validation_results.append(val_result)
+            test_results.append(test_result)
+
+    validation_results_df = pd.concat(validation_results, axis=0)
+    test_results_df = pd.concat(test_results, axis=0)
+
+    return validation_results_df, test_results_df
 
 def validate_binary_model(trained_model, df_v: pd.DataFrame):
 
