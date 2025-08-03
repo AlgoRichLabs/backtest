@@ -1,7 +1,7 @@
 from pandas import Timestamp
 
 from backtest.event import Event
-from utils.constant import SIDE, ORDER_STATUS
+from .utils.constant import SIDE, ORDER_STATUS
 
 
 class Order(Event):

@@ -25,6 +25,7 @@ class FREQUENCY(Enum):
 class STRATEGY(Enum):
     DCA = "dca"
     DCA_LIMIT_DIP = "dca_limit_dip"
+    BETA_SWING = "beta_swing"
 
 class ORDER_STATUS(Enum):
     OPEN = "open"

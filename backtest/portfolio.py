@@ -7,7 +7,7 @@ Description: <>
 from typing import Dict
 from backtest.position import Position
 from backtest.order import FilledOrder
-from utils.logger import logger
+from .utils.logger import logger
 
 
 class Portfolio(object):
@@ -24,8 +24,9 @@ class Portfolio(object):
     def fill_order(self, order: FilledOrder) -> None:
         self.cash_balance -= order.order_value - abs(order.order_value) * order.commission_rate
         if self.cash_balance < 0:
+            print(order.filled_date)
             raise Exception("Negative cash balance.")
-        logger.info(f"{order.side} order filled at {order.filled_price}, quantity {order.quantity}. Timestamp: {order.ts}")
+        logger.info(f"Symbol: {order.symbol}: {order.side} order filled at {order.filled_price}, quantity {order.quantity}. Timestamp: {order.ts}")
 
         if order.symbol not in self.positions.keys():
             self.positions[order.symbol] = Position(order.symbol)

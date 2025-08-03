@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "backtest"
+version = "0.1.0"
+authors = [
+  { name="Zhicheng", email="zhichengtang.career@gmail.com" },
+]
+description = "backtest module for internal usage."
+requires-python = ">=3.10"
+dependencies = [
+    "pandas",
+    "numpy",
+    "matplotlib",
+    "openpyxl",
+    "jupyter",
+    "ipykernel",
+    "scipy",
+    "scikit-learn"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]

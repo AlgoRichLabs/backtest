@@ -10,7 +10,7 @@ import pandas as pd
 from backtest.backtest_base import BacktestBase
 from backtest.event import Event, CashFlowChange, UpdatePortfolio
 from backtest.order import *
-from utils.constant import FREQUENCY
+from .utils.constant import FREQUENCY
 
 
 class BacktestDCA(BacktestBase):
