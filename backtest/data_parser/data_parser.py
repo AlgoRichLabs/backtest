@@ -7,7 +7,7 @@ Description: <This class parses the raw data into the format that strategy and b
 from typing import List
 import pandas as pd
 
-from utils.constant import FREQUENCY
+from ..utils.constant import FREQUENCY
 
 
 class DataParser(object):
@@ -96,5 +96,9 @@ class DataParser(object):
         positive_return = results["return"] > 0
         results.loc[positive_return, "label"] = 1
         results.loc[~positive_return, "label"] = 0
-        return results
 
+        cols = ["ts_event"] + list(results.drop(columns=["ts_event", "return", "label"]).columns) + ["return", "label"]
+        results = results.loc[:, cols]
+        print("Feature with forward return range:")
+        print(results.head(1)["ts_event"].values[0], results.tail(1)["ts_event"].values[0])
+        return results

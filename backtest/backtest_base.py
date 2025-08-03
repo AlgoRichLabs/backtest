@@ -10,9 +10,9 @@ import numpy as np
 
 from backtest.event import Event
 from backtest.portfolio import Portfolio
-from data_parser.ohlcv import OHLCV
-from data_parser.data_parser import DataParser
-from utils.constant import FREQUENCY
+from .data_parser.ohlcv import OHLCV
+from .data_parser.data_parser import DataParser
+from .utils.constant import FREQUENCY
 
 
 class BacktestBase(object):

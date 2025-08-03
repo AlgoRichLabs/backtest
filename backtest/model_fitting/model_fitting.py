@@ -164,4 +164,4 @@ def model_result(y, y_pred_proba, y_pred):
     print("Recall:", recall_score(y, y_pred))
     print("F1 Score:", f1_score(y, y_pred))
     print("ROC-AUC Score:", roc_auc_score(y, y_pred_proba))
-    return y_pred
+    return y_pred, roc_auc_score(y, y_pred_proba)
