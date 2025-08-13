@@ -4,13 +4,21 @@ Author: Zhicheng Tang
 Created Date: 8/24/24
 Description: <This class parses the raw data into the format that strategy and backtest could use.>
 """
+from multiprocessing import process
 from typing import List
 import pandas as pd
+import os
+import glob
 
 from ..utils.constant import FREQUENCY
 
 
 class DataParser(object):
+    """
+    A collection of static methos to parse and process financial data.
+    """
+
+
     @staticmethod
     def read_ohlcv(data_path: str, frequency: FREQUENCY) -> pd.DataFrame:
         if frequency == FREQUENCY.HOUR:
@@ -102,3 +110,90 @@ class DataParser(object):
         print("Feature with forward return range:")
         print(results.head(1)["ts_event"].values[0], results.tail(1)["ts_event"].values[0])
         return results
+
+    @staticmethod
+    def read_option_chain(data_path: str, underlying_symbol: str) -> pd.DataFrame:
+        """
+        Reads all option chain CSVs for a specific symbol from a directory,
+        merge and reformats them to a CBOE-like option EOD summary schema.
+        https://datashop.cboe.com/option-eod-summary
+        """
+        print(f"Starting to parse option data for {underlying_symbol} from {data_path}")
+
+        COLUMN_MAPPING = {
+            'Trade Date': 'quote_date',
+            'Strike': 'strike',
+            'Expiry Date': 'expiration',
+            'Call/Put': 'option_type',
+            'Last Trade Price': 'close',
+            'Bid Price': 'bid_eod',
+            'Ask Price': 'ask_eod',
+            'Bid Implied Volatility': 'bid_iv', # Temp name before averaging
+            'Ask Implied Volatility': 'ask_iv', # Temp name before averaging
+            'Open Interest': 'open_interest',
+            'Volume': 'trade_volume',
+            'Delta': 'delta_eod',
+            'Gamma': 'gamma_eod',
+            'Vega': 'vega_eod',
+            'Theta': 'theta_eod',
+            'Rho': 'rho_eod'
+        }
+
+        # Define the final column order, matching the CBOE structure
+        FINAL_COLUMNS = [
+            'underlying_symbol', 'quote_date', 'expiration', 'strike', 'option_type',
+            'open', 'high', 'low', 'close', 'trade_volume', 'vwap',
+            'bid_eod', 'ask_eod', 'bid_size_eod', 'ask_size_eod',
+            'implied_volatility_eod', 'delta_eod', 'gamma_eod', 'theta_eod', 'vega_eod', 'rho_eod',
+            'open_interest'
+        ]
+        resolved_path = os.path.expanduser(data_path)
+        if not os.path.isdir(resolved_path):
+            raise FileNotFoundError(f"Directory not found at the specified path: {os.path.abspath(resolved_path)}")
+
+        all_files_in_dir = os.listdir(resolved_path)
+        pattern_start = f'{underlying_symbol}_'.lower()
+        pattern_end = '_option_chain.csv'.lower()
+        
+        matched_files = []
+        for filename in all_files_in_dir:
+            if filename.lower().startswith(pattern_start) and filename.lower().endswith(pattern_end):
+                # If it matches, create the full path to the file
+                matched_files.append(os.path.join(resolved_path, filename))
+
+        if not matched_files:
+            raise FileNotFoundError("No option data found")
+
+        processed_dfs = []
+
+        for file_path in matched_files:
+            df = pd.read_csv(file_path)
+
+            if 'Unnamed: 0' in df.columns:
+                df = df.drop(columns=['Unnamed: 0'])
+
+            df.rename(columns=COLUMN_MAPPING, inplace=True)
+            df['quote_date'] = pd.to_datetime(df['quote_date'])
+            df['expiration'] = pd.to_datetime(df['expiration'])
+
+            df['option_type'] = df['option_type'].str.upper().str[0]
+
+            df["underlying_symbol"] = underlying_symbol
+
+            # --- Create CBOE columns that are missing from the current data source ---
+            df['open'] = pd.NA
+            df['high'] = pd.NA
+            df['low'] = pd.NA
+            df['vwap'] = pd.NA
+            df['bid_size_eod'] = pd.NA
+            df['ask_size_eod'] = pd.NA
+
+
+            # Create a single 'implied_volatility_eod' from the bid/ask IV by taking the midpoint.
+            df['implied_volatility_eod'] = df[['bid_iv', 'ask_iv']].mean(axis=1)
+            df = df[FINAL_COLUMNS]
+            processed_dfs.append(df)
+
+        final_df = pd.concat(processed_dfs, ignore_index=True)
+        final_df.sort_values(by=['quote_date', 'expiration', 'strike'], inplace=True)
+        return final_df
