@@ -22,16 +22,18 @@ class Portfolio(object):
         return self.cash_balance
 
     def fill_order(self, order: FilledOrder) -> None:
-        self.cash_balance -= order.order_value - abs(order.order_value) * order.commission_rate
+        commission = abs(order.order_value) * order.commission_rate
+        self.cash_balance -= (order.order_value + commission)
         if self.cash_balance < 0:
             print(order.filled_date)
             raise Exception("Negative cash balance.")
         logger.info(f"Symbol: {order.symbol}: {order.side} order filled at {order.filled_price}, quantity {order.quantity}. Timestamp: {order.ts}")
 
-        if order.symbol not in self.positions.keys():
-            self.positions[order.symbol] = Position(order.symbol)
+        instrument_symbol = order.instrument.symbol
+        if instrument_symbol not in self.positions:
+            self.positions[instrument_symbol] = Position(order.instrument)
 
-        self.positions[order.symbol].fill_order(order)
+        self.positions[instrument_symbol].fill_order(order)
 
     def get_snapshot(self) -> Dict:
         return {"portfolio_value": self.portfolio_value, "cash_balance": self.cash_balance, "positions": self.positions}
@@ -44,7 +46,7 @@ class Portfolio(object):
         """
         if prices:
             for symbol, price in prices.items():
-                if symbol in self.positions.keys():
+                if symbol in self.positions:
                     self.positions[symbol].update_position(price)
 
         self.portfolio_value = sum([position.position_value for position in self.positions.values()]) + self.cash_balance
