@@ -20,12 +20,14 @@ class FREQUENCY(Enum):
     HOUR = "hour"
     DAY = "day"
     WEEK = "week"
+    MONTH = "month"
 
 
 class STRATEGY(Enum):
     DCA = "dca"
     DCA_LIMIT_DIP = "dca_limit_dip"
     BETA_SWING = "beta_swing"
+    CSP = "csp"
 
 class ORDER_STATUS(Enum):
     OPEN = "open"
