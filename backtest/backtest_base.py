@@ -78,7 +78,6 @@ class BacktestBase(object):
         if InstrumentType.STOCK.value in instruments:
             self.option_data = self._load_stock_data(instruments[InstrumentType.STOCK.value])
 
-
     def _load_stock_data(self, symbols: List[str]) -> Dict[str, OHLCV]:
         """
         Initialize OHLCV objects for each symbol. Data ts is in UTC timezone.
@@ -103,8 +102,8 @@ class BacktestBase(object):
         """
         option_data = {}
         for symbol in symbols:
-            path = f"{self.history_data_path}/{symbol}/option-day.csv"
-            df = pd.read_csv(path)
+            path = f"{self.history_data_path}/{symbol}"
+            df = DataParser.read_option_chain(path)
             option_data[symbol] = OptionChain(df)
 
         return option_data
