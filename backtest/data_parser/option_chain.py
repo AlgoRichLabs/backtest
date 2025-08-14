@@ -5,11 +5,15 @@ Created Date: 08/12/25
 Description: a wrapper for an option chain dataframe, providing convenient query methods.
 """
 import pandas as pd
+from typing import Dict, List, Tuple, Optional
 
 
 class OptionChain:
     def __init__(self, data: pd.DataFrame):
         data["quote_date"] = pd.to_datetime(data["quote_date"])
+        data["expiration"] = pd.to_datetime(data["expiration"])
+        data["DTE"] = (data["expiration"] - data["quote_date"]).dt.days
+
         self.data = data
         self.underlying_symbol = self.data.iloc[0]["underlying_symbol"]
 

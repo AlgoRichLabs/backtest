@@ -4,11 +4,9 @@ Author: Zhicheng Tang
 Created Date: 8/24/24
 Description: <This class parses the raw data into the format that strategy and backtest could use.>
 """
-from multiprocessing import process
 from typing import List
 import pandas as pd
 import os
-import glob
 
 from ..utils.constant import FREQUENCY
 
@@ -112,11 +110,14 @@ class DataParser(object):
         return results
 
     @staticmethod
-    def read_option_chain(data_path: str, underlying_symbol: str) -> pd.DataFrame:
+    def process_option_chain(data_path: str, underlying_symbol: str) -> pd.DataFrame:
         """
         Reads all option chain CSVs for a specific symbol from a directory,
         merge and reformats them to a CBOE-like option EOD summary schema.
         https://datashop.cboe.com/option-eod-summary
+
+        This function is not used by any backtest class. It is used manually to process the raw option
+        chain data which is not in CBOE format. It only needs to be used once.
         """
         print(f"Starting to parse option data for {underlying_symbol} from {data_path}")
 
@@ -197,3 +198,10 @@ class DataParser(object):
         final_df = pd.concat(processed_dfs, ignore_index=True)
         final_df.sort_values(by=['quote_date', 'expiration', 'strike'], inplace=True)
         return final_df
+
+    @staticmethod
+    def read_option_chain(path: str) -> pd.DataFrame:
+        """
+        Currently, do not expect to read higher frequency option data in the near future.
+        """
+        return pd.read_csv(f"{path}/option-day.csv")
