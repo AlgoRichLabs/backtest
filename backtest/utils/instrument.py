@@ -1,3 +1,5 @@
+from __future__ import annotations # Allows type hinting a class within itself (e.g., in Option)
+
 from abc import ABC, abstractmethod
 from enum import Enum
 from datetime import date
@@ -56,6 +58,25 @@ class Stock(Instrument):
     def __repr__(self):
         return f"Stock(ticker='{self.symbol}')"
 
+    def to_option(self, expiration_date: date, strike_price: float, option_type: OptionType) -> Option:
+        """
+        Creates an Option instrument for this stock with the specified parameters.
+        
+        Args:
+            expiration_date: The expiration date of the option.
+            strike_price: The strike price of the option.
+            option_type: The type of the option (CALL or PUT).
+            
+        Returns:
+            An Option instrument instance.
+        """
+        return Option(
+            underlying_symbol=self.symbol,
+            expiration_date=expiration_date,
+            strike_price=strike_price,
+            option_type=option_type
+        )
+
 
 
 class Option(Instrument):
@@ -91,5 +112,11 @@ class Option(Instrument):
         return (f"Option(underlying='{self.underlying_symbol}', expiry='{self.expiration_date}', "
                 f"strike={self.strike_price}, type='{self.option_type.name}')")
 
-
+    def get_underlying(self) -> Stock:
+        """
+        Returns the underlying Stock instrument for this option.
         
+        Returns:
+            A Stock instrument instance representing the underlying.
+        """
+        return Stock(ticker=self.underlying_symbol)
