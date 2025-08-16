@@ -8,7 +8,8 @@ from typing import List, Dict
 import pandas as pd
 import numpy as np
 
-from backtest.event import Event
+from backtest.event import Event, CashFlowChange, UpdatePortfolio
+from backtest.order import LimitOrder, FilledOrder, CanceledOrder
 from backtest.portfolio import Portfolio
 from .data_parser.ohlcv import OHLCV
 from .data_parser.option_chain import OptionChain
@@ -36,9 +37,6 @@ class BacktestBase(object):
         self.portfolio_snapshots: List[Dict] = []
         self.net_cash_flow = initial_cash_balance
         self.period_returns: List[float] = []
-
-    def run_backtest(self, time_sorted_events: List[Event]) -> None:
-        raise NotImplementedError("Run backtest method is not implemented.")
 
     @staticmethod
     def get_simple_return(start_value: float, end_value: float) -> float:
@@ -69,6 +67,52 @@ class BacktestBase(object):
 
     def get_maximum_drawdown(self) -> float:
         pass
+
+    def run_backtest(self, time_sorted_events: List[Event]) -> None:
+        """
+        Simulate the portfolio performance based on the time sorted events.
+        :param time_ordered_events:
+        :return: None
+        """
+        last_value: float | None = None
+        open_orders: Dict[str, LimitOrder] = {}
+
+        for event in time_sorted_events:
+            if isinstance(event, FilledOrder):
+                filled_order: FilledOrder = event
+                self.portfolio.fill_order(filled_order)
+                self.portfolio.update_portfolio({filled_order.symbol: filled_order.filled_price})
+                self.portfolio_snapshots.append(self.portfolio.get_snapshot())
+            elif isinstance(event, LimitOrder):
+                open_orders[event.order_id] = event
+            elif isinstance(event, CanceledOrder):
+                del open_orders[event.order_id]
+            # TODO: add events of option assign and option expire.
+            elif isinstance(event, CashFlowChange):
+                if last_value:
+                    prices = {}
+                    for symbol in self.portfolio.positions.keys():
+                        end_of_day = event.ts.normalize() + pd.Timedelta(days=1) - pd.Timedelta(microseconds=1)
+                        intraday_prices = self.ohlcv_data[symbol].get_ohlcv_by_date_string(event.ts, end_of_day)
+                        try:
+                            close_price = intraday_prices.iloc[-1].close
+                        except IndexError:
+                            print(f"{event.ts} data not exist")
+                            continue
+                        prices[symbol] = close_price
+                    self.portfolio.update_portfolio(prices)
+                    period_return = self.get_simple_return(last_value, self.portfolio.portfolio_value)
+                    self.period_returns.append(period_return)
+
+                self.portfolio.add_cash_flow(event.change_amount)
+                self.net_cash_flow += event.change_amount
+                last_value = self.portfolio.portfolio_value
+            elif isinstance(event, UpdatePortfolio):
+                self.portfolio.update_portfolio(event.prices)
+            elif isinstance(event, Event):
+                raise NotImplementedError(f"{event} not supported.")
+            else:
+                raise ValueError(f"Invalid event type: {type(event)}.")
 
     def _load_data(self) -> None:
         instruments = self.config.get("instrument", {})

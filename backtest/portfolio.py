@@ -7,7 +7,9 @@ Description: <>
 from typing import Dict
 from backtest.position import Position
 from backtest.order import FilledOrder
+from backtest.event import OptionAssigned, OptionExpired
 from .utils.logger import logger
+from .utils.constant import SIDE
 
 
 class Portfolio(object):
@@ -34,6 +36,22 @@ class Portfolio(object):
             self.positions[instrument_symbol] = Position(order.instrument)
 
         self.positions[instrument_symbol].fill_order(order)
+
+    def option_expired(self, option_expired_event: OptionExpired):
+        """
+        Remove the option position and no further calculations required.
+        """
+        self.positions.remove(option_expired_event.instrument.symbol)
+
+    def option_assigned(self, option_assigned_event: OptionAssigned):
+        """
+        Execute trades for assigned option.
+        """
+        position = self.positions[option_assigned_event.instrument]
+        side = SIDE.BUY if position.amount > 0 else SIDE.SELL
+        filled_order = option_assigned_event.get_filled_order(side, position.amount)
+        self.fill_order(filled_order)
+
 
     def get_snapshot(self) -> Dict:
         return {"portfolio_value": self.portfolio_value, "cash_balance": self.cash_balance, "positions": self.positions}
