@@ -8,15 +8,14 @@ from typing import Dict, List
 import pandas as pd
 
 from backtest.backtest_base import BacktestBase
-from backtest.event import Event, CashFlowChange, UpdatePortfolio
-from backtest.order import *
+from backtest.event import Event, CashFlowChange, UpdatePortfolio, LimitOrder, FilledOrder, CaceledOrder
 from .utils.constant import FREQUENCY
 
 
 class BacktestDCA(BacktestBase):
-    def __init__(self, history_data_path: Dict[str, str], frequency: FREQUENCY, start_date: str,
+    def __init__(self, history_data_path: Dict[str, str], instruments: Dict, frequency: FREQUENCY, start_date: str,
                  end_date: str, **kwargs) -> None:
-        super().__init__(history_data_path, frequency, start_date, end_date, **kwargs)
+        super().__init__(history_data_path, instruments, frequency, start_date, end_date, **kwargs)
 
     def run_backtest(self, time_ordered_events: List[Event]) -> None:
         """

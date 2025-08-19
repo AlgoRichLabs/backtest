@@ -3,25 +3,26 @@ import pandas as pd
 
 from backtest.backtest_base import BacktestBase
 from backtest.event import Event, CashFlowChange, UpdatePortfolio
-from backtest.order import *
 from .utils.constant import FREQUENCY
 from .utils.logger import logger
 
 
 class BacktestCSP(BacktestBase):
-    def __init__(self, history_data_path: Dict[str, str], frequency: FREQUENCY, start_date: str,
-                 end_date: str, initial_cash: float, **kwargs) -> None:
+    def __init__(self, history_data_path: str, instruments: Dict, frequency: FREQUENCY, start_date: str,
+                 end_date: str, initial_cash: float = 0, **kwargs) -> None:
+
         """
         Initializes the backtesting environment for strategies involving complex instruments.
 
         Args:
-            history_data_path: Path to historical data.
+            history_data_path: path to directory that contains all market data. The path needs to be combined with symbol and instrument type.
             frequency: The frequency of the backtest data.
             start_date: The start date of the backtest.
             end_date: The end date of the backtest.
             initial_cash: The starting cash balance for the portfolio.
         """
-        super().__init__(history_data_path, frequency, start_date, end_date, **kwargs)
+        super().__init__(history_data_path, instruments, frequency, start_date, end_date, **kwargs)
+
 
 
     def run_backtest(self, time_ordered_events: List[Event]) -> None:

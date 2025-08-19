@@ -6,6 +6,7 @@ Description: a wrapper for an option chain dataframe, providing convenient query
 """
 import pandas as pd
 from typing import Dict, List, Tuple, Optional
+from ..utils.instrument import Option
 
 
 class OptionChain:
@@ -38,3 +39,28 @@ class OptionChain:
         Returns the entire underlying DataFrame.
         """
         return self.data
+
+    def get_instrument_price(self, date_string: str, instrument: Option) -> float:
+        target_date = pd.to_datetime(date_string)
+        daily_chain = self.get_chain_by_date(date_string)
+        if daily_chain.empty:
+            if target_date > instrument.expiration_date:
+                close_price = 0
+            else:
+                print(f"Warning: No option chain data for {self.underlying_symbol} on {target_date}.")
+        else:
+            target_expiry = pd.to_datetime(instrument.expiration_date)
+            option_row = daily_chain
+            specific_option_row = daily_chain[
+                (daily_chain['strike'] == instrument.strike_price) &
+                (daily_chain['expiration'] == target_expiry) &
+                (daily_chain['option_type'] == instrument.option_type.value)
+                ]
+            if not specific_option_row.empty:
+                return (specific_option_row.iloc[0]['ask_eod'] + specific_option_row.iloc[0]['bid_eod']) / 2
+            else:
+                print(f"Warning: Could not find specific contract in data on {target_date}, strike "
+                      f"{instrument.strike_price}, expiry: {target_expiry}, type: {instrument.option_type.value}")
+
+        return None
+
