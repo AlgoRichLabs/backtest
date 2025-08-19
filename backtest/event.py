@@ -11,6 +11,7 @@ from backtest.utils.instrument import Instrument, OptionType, Option
 from backtest.utils.constant import SIDE, ORDER_STATUS
 
 
+
 class Event:
     _id_counter = 0
 
@@ -163,7 +164,9 @@ class OptionAssigned(Event):
             elif self.instrument.option_type == OptionType.PUT:
                 order_side = SIDE.BUY
 
+
         print(f"Option is assigned. Date: {self.ts}, Side: {order_side}, Quantity: {abs(quantity * self.instrument.multiplier)}")
+
         return FilledOrder(
             underlying_stock,
             self.ts, # Usually the execution date is one trading day after the expiration day. Just assgined ts for convenience

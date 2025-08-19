@@ -10,6 +10,7 @@ from .utils.logger import logger
 class BacktestCSP(BacktestBase):
     def __init__(self, history_data_path: str, instruments: Dict, frequency: FREQUENCY, start_date: str,
                  end_date: str, initial_cash: float = 0, **kwargs) -> None:
+
         """
         Initializes the backtesting environment for strategies involving complex instruments.
 
@@ -21,6 +22,7 @@ class BacktestCSP(BacktestBase):
             initial_cash: The starting cash balance for the portfolio.
         """
         super().__init__(history_data_path, instruments, frequency, start_date, end_date, **kwargs)
+
 
 
     def run_backtest(self, time_ordered_events: List[Event]) -> None:

@@ -10,6 +10,7 @@ import numpy as np
 
 from backtest.event import (Event, CashFlowChange, OptionAssigned, OptionExpired,
                             UpdatePortfolio, LimitOrder, FilledOrder, CanceledOrder)
+
 from backtest.portfolio import Portfolio
 from .data_parser.ohlcv import OHLCV
 from .data_parser.option_chain import OptionChain
@@ -39,6 +40,7 @@ class BacktestBase(object):
         self.net_cash_flow = initial_cash_balance
         self.period_returns: List[float] = []
         self._load_data()
+
 
     @staticmethod
     def get_simple_return(start_value: float, end_value: float) -> float:
@@ -93,6 +95,7 @@ class BacktestBase(object):
                 self.portfolio.option_assigned(event)
             elif isinstance(event, OptionExpired):
                 self.portfolio.option_expired(event)
+
             elif isinstance(event, CashFlowChange):
                 if last_value:
                     prices = {}
@@ -117,6 +120,7 @@ class BacktestBase(object):
                             close_price = option_chain_data.get_instrument_price(event.ts.date(), instrument)
                         if close_price is not None:
                             prices[symbol] = close_price
+
                     self.portfolio.update_portfolio(prices)
                     period_return = self.get_simple_return(last_value, self.portfolio.portfolio_value)
                     self.period_returns.append(period_return)
