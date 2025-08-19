@@ -6,8 +6,7 @@ Description: <>
 """
 from typing import Dict
 from backtest.position import Position
-from backtest.order import FilledOrder
-from backtest.event import OptionAssigned, OptionExpired
+from backtest.event import FilledOrder, OptionAssigned, OptionExpired
 from .utils.logger import logger
 from .utils.constant import SIDE
 
@@ -29,7 +28,7 @@ class Portfolio(object):
         if self.cash_balance < 0:
             print(order.filled_date)
             raise Exception("Negative cash balance.")
-        logger.info(f"Symbol: {order.symbol}: {order.side} order filled at {order.filled_price}, quantity {order.quantity}. Timestamp: {order.ts}")
+        logger.info(f"Symbol: {order.symbol}: {order.side} order filled at {order.filled_price}, quantity {order.quantity}, multiplier {order.instrument.multiplier}, Timestamp: {order.ts}")
 
         instrument_symbol = order.instrument.symbol
         if instrument_symbol not in self.positions:
@@ -41,16 +40,17 @@ class Portfolio(object):
         """
         Remove the option position and no further calculations required.
         """
-        self.positions.remove(option_expired_event.instrument.symbol)
+        del self.positions[option_expired_event.instrument.symbol]
 
     def option_assigned(self, option_assigned_event: OptionAssigned):
         """
         Execute trades for assigned option.
         """
-        position = self.positions[option_assigned_event.instrument]
+        position = self.positions[option_assigned_event.instrument.symbol]
         side = SIDE.BUY if position.amount > 0 else SIDE.SELL
         filled_order = option_assigned_event.get_filled_order(side, position.amount)
         self.fill_order(filled_order)
+        del self.positions[option_assigned_event.instrument.symbol]
 
 
     def get_snapshot(self) -> Dict:

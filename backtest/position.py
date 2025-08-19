@@ -4,11 +4,9 @@ Author: Zhicheng Tang
 Created Date: 8/23/24
 Description: <>
 """
-from backtest.order import FilledOrder
 from .utils.constant import SIDE
 from .utils.instrument import Instrument, InstrumentType
-from .order import FilledOrder
-
+from backtest.event import FilledOrder
 
 class Position(object):
     def __init__(self, instrument: Instrument) -> None:
